@@ -1,4 +1,4 @@
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5791971.svg)](https://doi.org/10.5281/zenodo.5791971)  [Titel anhand dieser DOI in Citavi-Projekt übernehmen] 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5791971.svg)](https://doi.org/10.5281/zenodo.5791971)
 
 # dynamic-pricing-in-production-networks
 
