@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5791971.svg)](https://doi.org/10.5281/zenodo.5791971)  [Titel anhand dieser DOI in Citavi-Projekt übernehmen] 
+
 # dynamic-pricing-in-production-networks
 
 This code shows a complete implementation of a reinforcement learning agent and simulation environment to simulate a company in a production network setting prices dnamically depending on the individual preference of customers and the current state of the production system (e.g. capacity utilization, shortages, supply)
