@@ -1,0 +1,1 @@
+In this folder the preproccessed input data is stored. The data is used specific to the environment. To structure the data in the file system transparent it is useful to create one folder for each environment. Then, in the source code there is the "Paths.ts" file which maps the paths to variables. This way, the paths only need to be changed in one place. 
