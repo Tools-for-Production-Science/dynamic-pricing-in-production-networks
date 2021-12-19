@@ -25,9 +25,7 @@ First of all install all neccessary packages:
 ```
 npm i
 ```
-To compile the code into build, typescript is needed.
-
-Then, it is recommended to install typescript compiler globally.
+To compile the code into build, typescript is needed. it is recommended to install typescript compiler globally.
 ```
 npm i -g typescript
 ```
@@ -41,17 +39,21 @@ tsc //compile just once
 ```
 
 Now, there are multiple different ways to run the code. 
+### Nodejs
 First, the code can be executed directly via nodejs
 ```
 node ./built/SystemManagement/Server.js
 ```
+### Docker
 Second, it is possible to use docker.
 With the -v volume commands the database and csv files become persistent. Instead of "engineC" you can name the container anyway you want.
 ```
 docker build -t engine . //Instead of "engine" it is possible to name the image anyway you want
 docker run -d --name engineC -p 3001:3001 -v /home/experiments:/usr/src/app/db -v /home/csv:/usr/src/app/csv engine
 ```
-Third, it is possible to use the predefined vscode templates. In order to do so, open the folder with vs code. In the run tab there are multiple options:
+
+### Visual Studio Code
+Third, it is possible to use the predefined vscode templates - which is basically the same as running with nodejs but more convenient. In order to do so, open the folder with vs code. In the run tab there are multiple options:
 System: Starts the backend and previously compiles the code
 System w/o Rebuild: Starts the backend server without a rebuild of code
 System w/o Rebuild (Production): Starts the code without compiler and log stream to speed up execution - this mode is recommended for runs where no debugging of code is necessary
