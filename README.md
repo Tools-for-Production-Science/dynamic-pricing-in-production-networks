@@ -5,7 +5,7 @@ The general concept is shown in the following figure:
 
 <h1 align="center">
     <a href="https://github.com/Tools-for-Production-Science/dynamic-pricing-in-production-networks" title="Dynamic Pricing">
-    <img width=90% alt="" src="https://github.com/Tools-for-Production-Science/dynamic-pricing-in-production-networks/blob/main/concept.png"> </a>
+    <img width=90% alt="" src="https://github.com/Tools-for-Production-Science/dynamic-pricing-in-production-networks/blob/main/concept.jpg"> </a>
     <br>
 </h1>
 
