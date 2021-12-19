@@ -66,4 +66,4 @@ The implemented use cases are based on two real applications. Therefore, the dat
 
 ## Note on the simulation engine
 
-The simulation engine used is the simts npm package. It was created within this work but can be used for any discrete event simulation approach. The engine is based on sim.js. For more Information see <a href="https://github.com/Tools-for-Production-Science/simts" title="link">.
+The simulation engine used is the <a href="https://www.npmjs.com/package/simts" title="link">simts npm package</a>. It was created within this work but can be used for any discrete event simulation approach. The engine is based on sim.js. For more Information see <a href="https://github.com/Tools-for-Production-Science/simts" title="link">link</a>
