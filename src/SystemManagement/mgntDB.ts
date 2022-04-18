@@ -44,7 +44,12 @@ export class mgntDB
             WHERE expid = ${id}`;
         this.db.prepare(sql).run();
 
+        try
+        {
         fs.unlinkSync(`${this.subDir}/${id}.db`);
+        }
+        catch
+        {}
     }
     /**
      * Setup the database.

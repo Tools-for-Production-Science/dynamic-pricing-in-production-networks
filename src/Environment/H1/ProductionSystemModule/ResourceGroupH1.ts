@@ -11,7 +11,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 */
 
 import Order from "./CustomerOrderH1";
-import { Sim } from "simts";
+import { Random, Sim } from "simts";
 import ResourceH1 from "./ResourceH1";
 
 export class ResourceGroupH1 {
@@ -20,9 +20,11 @@ export class ResourceGroupH1 {
     maxweight: number;
     name: string = "";
     sim: Sim;
+    rnd:Random;
     machines = new Array<ResourceH1>();
     sort = new Array<Array<Order>>();
     ProductionTime: Map<number, number>; 
+    id:number = -1;
 
     /**
      * Create a new resourcegroup
@@ -34,9 +36,10 @@ export class ResourceGroupH1 {
      * @param ProductionTime  map to define a production time per product 
      */
 
-    constructor(name: string, sim: Sim, minweight: number, maxweight: number, parallel: boolean, ProductionTime: Map<number, number>) {
+    constructor(name: string, sim: Sim, minweight: number, maxweight: number, parallel: boolean, ProductionTime: Map<number, number>, rnd:Random) {
         this.name = name;
         this.sim = sim;
+        this.rnd = rnd;
         this.minweight = minweight;
         this.maxweight = maxweight;
         this.parallel = parallel;
@@ -49,6 +52,7 @@ export class ResourceGroupH1 {
      */
     
     addMachine(id:number) {
+        this.id = id;
         this.machines.push(new ResourceH1(this,id));
     }
 }

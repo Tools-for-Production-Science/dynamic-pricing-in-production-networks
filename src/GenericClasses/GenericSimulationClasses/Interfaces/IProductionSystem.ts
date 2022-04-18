@@ -20,7 +20,7 @@ import ICustomerOrder from "./ICustomerOrder";
 export default interface IProductionSystem
 {
     /**
-     * Create an environment specific order template which implements the ICustomerOrder and is based on the standardized IDEmand
+     * Create an environment specific order template which implements the ICustomerOrder and is based on the standardized IDemand
      * @param demand the IDemand object to create the roder from
      */
     createOrderTemplate(demand: IDemand): ICustomerOrder;

@@ -22,7 +22,7 @@ import { Random } from "simts";
 import { SeedOnlyInitializerArgs } from '@tensorflow/tfjs-layers/dist/initializers';
 import DataStream from '../../SystemManagement/Analytics/DataStream';
 import { Memory } from './Memory';
-import { TensorContainerObject } from '@tensorflow/tfjs-node';
+import { LayersModel, TensorContainerObject } from '@tensorflow/tfjs-node';
 
 class mySeed implements SeedOnlyInitializerArgs
 {
@@ -50,7 +50,7 @@ export class Agent
 
     actor_learningr: number;                            //Learning Rate of the Actor
     critic_learningr: number;                           //Learning Rate of the Critic
-   
+
     maxLearningRateCritic: number;                       //Maximum learning rate of the Critic
     minLearningRateCritic: number;                       //Minimum learning rate of the Critic
     criticLlambda: number;                               //llambda for updating the critic learning rate
@@ -87,6 +87,7 @@ export class Agent
     memory: Memory;                                     //memory for the state, action, reward observations
 
     trainActor = true;
+    orchestrator;
 
     /**
      * This is the A2C core agent.
@@ -95,8 +96,9 @@ export class Agent
      * @param analytics a reference to the analytics object of the experiment
      * @param random a reference to the randomness source
      */
-    constructor(configuration: MLConfiguration, environment: Environment, analytics: Analytics | undefined = undefined, random: Random)
+    constructor(configuration: MLConfiguration, environment: Environment, analytics: Analytics | undefined = undefined, random: Random, orchestrator)
     {
+        this.orchestrator = orchestrator;
         this.memory = new Memory(random);
         this.random = random;
         this.myseed = new mySeed(this.random.random()) as SeedOnlyInitializerArgs;
@@ -135,10 +137,20 @@ export class Agent
      */
     clean()
     {
-        tf.dispose(this.actor as unknown as TensorContainerObject);
-        tf.dispose(this.critic as unknown as TensorContainerObject);
-        tf.dispose(this.optimizer_policy as unknown as TensorContainerObject);
-        tf.disposeVariables();
+        this.memory.samples.forEach(s =>
+        {
+            (s[0] as tf.Tensor).dispose();
+            (s[3] as tf.Tensor).dispose();
+        })
+        this.memory.samples.length = 0;
+
+        this.actor.dispose();
+        tf.dispose(this.actor as unknown as TensorContainerObject); //12
+        tf.dispose(this.actor.layers[this.actor.layers.length - 1] as unknown as TensorContainerObject)
+        this.critic.dispose();
+        tf.dispose(this.critic as unknown as TensorContainerObject); //16
+        tf.dispose(this.critic.layers[this.critic.layers.length - 1] as unknown as TensorContainerObject)
+        tf.dispose(this.optimizer_policy as unknown as TensorContainerObject); //2
     }
 
     private createReporting(analytics: Analytics)
@@ -262,10 +274,13 @@ export class Agent
         let model = tf.model({ inputs: input, outputs: nn_out });
 
         //compile the model, as model.fit() will be used
-        model.compile({
-            optimizer: tf.train.adam(this.critic_learningr),
-            loss: 'meanSquaredError',
-            metrics: ['mse', 'accuracy']
+        tf.tidy(() =>
+        {
+            model.compile({
+                optimizer: tf.train.adam(this.critic_learningr),
+                loss: 'meanSquaredError',
+                metrics: ['mse', 'accuracy']
+            })
         })
 
         //summarize the defined model
@@ -345,7 +360,7 @@ export class Agent
         for (let i = 0; i < this.configuration.numActions; i++)
         {
             act_output[i] = tf.randomNormal([1, 1], policyArrayMue[i], policyArraySigma[i], "float32", this.random.random())
-            msglog.log(msglog.types.debug, 'result of this.random.random() is ' + this.random.random(), this)         
+            msglog.log(msglog.types.debug, 'result of this.random.random() is ' + this.random.random(), this)
         }
 
         //tidy the used tensors
@@ -512,16 +527,15 @@ export class Agent
     {
         let advantage: tf.Tensor;
         let actionsArray: tf.Tensor[];
-        (this.optimizer_policy as any).learningRate = this.actor_learningr;
+        (this.optimizer_policy as any).learningRate = this.actor_learningr; //0
         for (let i = 0; i < batch.length; i++)
         {
 
-            [advantage,
-                actionsArray] = this.getEssentialValuesForActorTraining(batch, i);
+            [advantage, actionsArray] = this.getEssentialValuesForActorTraining(batch, i); //0
             //if condition for differentiating between separate  and non-separate trainingF
             //batch: state, action, reward, nextstate
             //train actor by minimizing loss
-            //Last State, advantage, actionsarray             
+            //Last State, advantage, actionsarray          
             let temp = await this.optimizer_policy.minimize(() => this.computePolicyLoss(batch[i][0], advantage, actionsArray), true);
             temp?.dispose(); //this frees the heap, otherwise a memory leak occurs
 
@@ -530,7 +544,7 @@ export class Agent
             tf.dispose(actionsArray);
 
             this.actor_learningr = this.updateWithExpoSmoothing(this.configuration.maxActorLearningRate, this.configuration.minActorLearningRate, this.configuration.actorLlambda, this.counter2);
-            this.counter2++;
+            this.counter2++; //75
         } //for loop ends 
         msglog.log(msglog.types.debug, 'actor trained', this)
     }
@@ -555,23 +569,20 @@ export class Agent
 
         (this.critic.optimizer as any).learningRate = this.critic_learningr;
 
-        await this.critic.fit(inputs, labels, {
+        await this.critic.fit(inputs, labels, { //77
             epochs: this.configuration.epochsCritic,
             batchSize: batch.length,
             verbose: 0,
-            callbacks: {
-                onEpochEnd: async (epoch, logs) =>
-                {
-                    if (logs)
-                    {
-                        this.criticLossWriter.write(this.counter2, logs.mse);
-                        this.actorLossWriter.write(this.counter2, 0);
-                        let c = 0;
-                    }
-
-                    this.counter2++;
-                }
-            }
+            // callbacks: { //possible cause of memory leak
+            //     onEpochEnd: async (epoch, logs) =>
+            //     {
+            //         if (logs)
+            //         {
+            //             this.criticLossWriter.write(this.counter2, logs.mse);
+            //         }
+            //         this.counter2++;
+            //     }
+            // }
         })
 
         tf.dispose(inputs);
@@ -592,12 +603,15 @@ export class Agent
     {
         //shapes have to be checked everywhere
         msglog.log(msglog.types.debug, 'computing policy loss of actor', this)
-        return tf.tidy(() =>
-        {
-            //predict actions
-            let prediction = this.actor.predict(stateTensor)
-            msglog.log(msglog.types.debug, 'prediction is ' + prediction, this)
 
+        //predict actions
+        let temp = (stateTensor as tf.Tensor).clone();
+        let prediction = tf.tidy(() => this.actor.predict(temp));
+        temp.dispose();
+        msglog.log(msglog.types.debug, 'prediction is ' + prediction, this)
+
+        let res = tf.tidy(() => //65
+        {
             //array for mue and sigma of each action
             let mueArray = new Array(this.numActions)
             let sigmaArray = new Array(this.numActions)
@@ -623,8 +637,8 @@ export class Agent
                 let j = 0;
                 for (let i = 0; i < this.configuration.numActions; i++)
                 {
-                    mueArray[i] = (prediction[j] as tf.Tensor).reshape([1, 1]);
-                    sigmaArray[i] = tf.add(prediction[j + 1].reshape([1, 1]), tf.tensor(0.00000000001, [1, 1]))
+                    mueArray[i] = tf.tidy(() => (prediction[j] as tf.Tensor).reshape([1, 1]));
+                    sigmaArray[i] = tf.tidy(() => tf.add(prediction[j + 1].reshape([1, 1]), tf.tensor(0.00000000001, [1, 1])));
                     j = j + 2
                 }
                 msglog.log(msglog.types.debug, 'mue array is ' + mueArray, this)
@@ -636,20 +650,20 @@ export class Agent
             let logProbSA: tf.Tensor[] = new Array(this.configuration.numActions);
             let multiplication1SA: tf.Tensor[] = new Array(this.configuration.numActions);
             let multiplication2SA: tf.Tensor[] = new Array(this.configuration.numActions);
-            let policyLossSA: tf.Tensor = tf.tensor([1]);
+            let policyLossSA: tf.Tensor;
 
             //calculate the probability of each action
             for (let i = 0; i < probabilityArray.length; i++)
             {
                 //check dimension!
-                probabilityArray[i] = tf.add(this.probabilityDensityFunction(actionsArray[i], mueArray[i], sigmaArray[i]), tf.tensor(0.000001, [1, 1]));
+                probabilityArray[i] = tf.tidy(() => tf.add(this.probabilityDensityFunction(actionsArray[i], mueArray[i], sigmaArray[i]), tf.tensor(0.000001, [1, 1])));
                 //take the natural logarithm of each action
                 logProbSA[i] = tf.log(probabilityArray[i]);
                 //multiply the logProbSA with -1
                 //check shape of -1 tensor
-                multiplication1SA[i] = tf.mul(logProbSA[i], tf.tensor(-1))
+                multiplication1SA[i] = tf.tidy(() => tf.mul(logProbSA[i], tf.tensor(-1)));
                 //multiply the mulltiplication1SA with the advantage of the actions together
-                multiplication2SA[i] = tf.mul(multiplication1SA[i], advantage)
+                multiplication2SA[i] = tf.tidy(() => tf.mul(multiplication1SA[i], advantage))
                 //convert to a scalar
                 //check if we need tf.mean() here            
             }
@@ -658,28 +672,41 @@ export class Agent
             msglog.log(msglog.types.debug, 'logProb computed ' + logProbSA, this)
             msglog.log(msglog.types.debug, 'calculations done', this)
 
-            policyLossSA = multiplication2SA[0].reshape([1]);
+            policyLossSA = tf.tidy(() => multiplication2SA[0].reshape([1]));
             msglog.log(msglog.types.debug, 'multiplication2SA' + multiplication2SA, this)
-            msglog.log(msglog.types.debug, 'multiplication2SA' + multiplication2SA[0].reshape([1]), this)
+            //msglog.log(msglog.types.debug, 'multiplication2SA' + multiplication2SA[0].reshape([1]), this)
             for (let i = 1; i < this.configuration.numActions; i++)
             {
-                policyLossSA = policyLossSA.concat(multiplication2SA[i].reshape([1]));
+                policyLossSA = tf.tidy(() => policyLossSA.concat(multiplication2SA[i].reshape([1])));
             }
 
             msglog.log(msglog.types.debug, 'policy loss several actions' + policyLossSA, this)
-            msglog.log(msglog.types.debug, 'tf.mean of policy loss' + tf.mean(policyLossSA), this)
+            //msglog.log(msglog.types.debug, 'tf.mean of policy loss' + tf.mean(policyLossSA), this)
 
 
             //write policy loss into report
-            let loss = tf.mean(policyLossSA).asScalar();
+            let loss = tf.tidy(() => tf.mean(policyLossSA).asScalar());;
             this.actorLossWriter.write(this.counter2, loss.arraySync());
             this.criticLossWriter.write(this.counter2, 0);
             this.rawLoss.write("ActorLoss", loss.arraySync());
             this.advantageWriter.write(this.counter2, advantage.arraySync()[0][0]);
 
-            tf.dispose([logProbSA, mueArray, multiplication1SA, multiplication2SA, policyLossSA, prediction, probabilityArray, sigmaArray]);
+            //tf.dispose(stateTensor);
+            
+            tf.dispose(mueArray); //7 inkl. sigmaArray - 3 -1
+            tf.dispose(sigmaArray);
+            tf.dispose(logProbSA); //2 -1 
+            tf.dispose(multiplication1SA); //4 -1
+            tf.dispose(multiplication2SA); //3 -1
+            tf.dispose(policyLossSA); //1 +2 +2 -1
+            tf.dispose(probabilityArray); //27 -1
+            tf.dispose(sigmaArray); //-0
             return loss;
         })
+
+        tf.dispose(prediction); //19 -2
+
+        return res; //121
         //return loss;
     }
 

@@ -20,6 +20,8 @@ import ExperimentV2Optimization from "../ExperimentTypes/ExperimentV2Optimizatio
 import ExperimentH1Optimization from "../ExperimentTypes/ExperimentH1Optimization";
 import ExperimentV2Benchmark from "../ExperimentTypes/ExperimentV2Benchmark";
 import ExperimentH1Benchmark from "../ExperimentTypes/ExperimentH1Benchmark";
+import ExperimentH1Limit from "../ExperimentTypes/ExperimentH1Limits";
+import ExperimentH1Bottleneck from "../ExperimentTypes/ExperimentH1Bottleneck";
 
 /**
  * This class handles the creation of distinct experiments
@@ -79,6 +81,17 @@ export class ExperimentFactory
                             experiment = new ExperimentH1Benchmark(settings, expid, experimentator, historic);
                             break;
                         }
+                    case Environment.BenchmarkH1Limit:
+                        {
+                            experiment = new ExperimentH1Limit(settings, expid, experimentator, historic);
+                            break;
+                        }
+                    case Environment.ExperimentH1Bottleneck:
+                        {
+                            experiment = new ExperimentH1Bottleneck(settings, expid, experimentator, historic);
+                            break;
+                        }
+
                     default:
                         {
                             experiment = new ExperimentH1(settings, expid, experimentator, historic); //Create as a default to get access to visualization

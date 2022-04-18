@@ -73,7 +73,7 @@ export default class DemandV2 implements IDemand
             throw "Anzahl Kunden wurde nicht im Produkt hinterlegt";
 
         factor = this.engine.sim.simTiming.getInBaseTime(1, "months") / factor; //NormEinheiten / erwarte Ankunftsrate
-        factor *= this.product[0].numCustomers; //das geht nur, wenn alle Kunden die selbe Bestellzwischenankunftszeit haben!
+        factor *= this.product[0].numCustomers;
         return Math.round((this.product[0] as ProductV2).drawQuantity(factor));
     }
 

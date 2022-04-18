@@ -1,1 +1,1 @@
-This place is for saving different configurations which controls the experiment run. The normal way to use the configurations is to use the front end client which allows an easy control of the system. However, it is also possible to change the code so that a specific configuration is automatically used on startup.
+This place is compiled code. The readme is only here so that git creates the folder.

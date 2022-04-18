@@ -21,7 +21,7 @@ import { expDB } from "../expDB";
  */
 export default interface IExperiment
 {
-    analytics?;
+    analytics;
     dbcon:expDB;
     expid;
     engine:IEngine| null;

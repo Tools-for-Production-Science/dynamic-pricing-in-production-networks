@@ -29,9 +29,12 @@ export default class Postprocessing
         let share_declinedOrders = no_nullOrders/no_orders
         let servicegrad = (no_orders - no_nullOrders - no_lateOrders)/(no_orders - no_nullOrders)
         let cum_revenue = (this.engine.productionSystem as ProductionSystemH1).overallRevenue;
+        let usage = 0;
+        let usageStd = 0;
+
         return {
             expid: this.expid, //ok
-            UseKI: envConfig.useAI, //ok
+            UseAI: envConfig.useAI, //ok
             seed: this.engine.config.seed, //ok
             traffic: envConfig.traffic, //ok
             "Anzahl eingegangene Aufträge": no_orders, //ok
@@ -40,9 +43,41 @@ export default class Postprocessing
             'Verspätungen': no_lateOrders, //ok
             'Service Level': (1-share_declinedOrders), //unclear
             'Mittlerer Gewinn pro Auftrag': cum_revenue/no_orders, //ok
-            'Gewinn': cum_revenue //ok
+            'Gewinn': cum_revenue, //ok         
         };
         // 'Liefertermineinhaltung':servicegrad,'Verspätungen':no_lateOrders,'Service Level':(1-share_declinedOrders) , 'Mittlere Verspätung':avg_dueDateDeviation, 'Maximale Verspätung':max_tardiness, 'Mittlerer Gewinn pro Auftrag':avg_revenue,'Gewinn':cum_revenue})
+    }
+
+    postProcessingH1Limit()
+    {
+        let envConfig = this.engine.config.envConfig;
+
+        let no_orders = (this.engine.productionSystem as ProductionSystemH1).finishedCustomerOrderCounter;
+        let no_nullOrders = this.engine.productionNetwork.counterNullOrders;
+        let no_lateOrders = (this.engine.productionSystem as ProductionSystemH1).counterDelayedCustomerOrders;
+        let share_declinedOrders = no_nullOrders/no_orders
+        let servicegrad = (no_orders - no_nullOrders - no_lateOrders)/(no_orders - no_nullOrders)
+        let cum_revenue = (this.engine.productionSystem as ProductionSystemH1).overallRevenue;
+        let earlines = (this.engine.productionSystem as ProductionSystemH1).earlinessSum;
+        let tardiness = (this.engine.productionSystem as ProductionSystemH1).tardinessSum;
+        let duedeviation = Math.abs(earlines)+Math.abs(tardiness);
+
+        return {
+            expid: this.expid, //ok
+            UseAI: envConfig.useAI, //ok
+            seed: this.engine.config.seed, //ok
+            traffic: envConfig.traffic, //ok
+            "Anzahl eingegangene Aufträge": no_orders, //ok
+            'Abgelehnte Aufträge': no_nullOrders, //ok
+            'Liefertermineinhaltung': servicegrad, //ok
+            'Verspätungen': no_lateOrders, //ok
+            'Service Level': (1-share_declinedOrders), //unclear
+            'Mittlerer Gewinn pro Auftrag': cum_revenue/no_orders, //ok
+            'Verfrühung (Summe)': earlines,
+            'Verspätung (Summe)':tardiness,
+            'Lieferterminabweichung': duedeviation, 
+            'Gewinn': cum_revenue, //ok         
+        };
     }
 
     /**

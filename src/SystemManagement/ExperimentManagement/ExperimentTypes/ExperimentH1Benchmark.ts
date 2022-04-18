@@ -94,13 +94,13 @@ export default class ExperimentH1Benchmark extends ExperimentTemplate implements
         }
     }
 
-    async benchmarkingTestH1(useKI: boolean, trained_model: string)
+    async benchmarkingTestH1(useAI: boolean, trained_model: string)
     {
         this.analytics.deactivateDataStreamWriterCreation = true;
         this.analytics.writeLogsToDB = false;
         this.analytics.deactivateReportsCreation = true;
 
-        this.settings.envConfig.useAI = useKI;
+        this.settings.envConfig.useAI = useAI;
         let sim = new EngineH1(this.settings, this.analytics);
         sim.orchestrator?.loadModelWeightsString(trained_model);
 
@@ -124,7 +124,7 @@ export default class ExperimentH1Benchmark extends ExperimentTemplate implements
         let configurationBenchmarking = JSON.stringify(this.settings);
         this.dbcon.saveConfiguration(this.expid, configurationBenchmarking);
 
-        let KPIs = new Postprocessing(this.analytics, this.expid, this.dbcon, this.engine).postProcessingH1();
+        let KPIs = new Postprocessing(this.analytics, this.expid, this.dbcon, this.engine!).postProcessingH1();
 
         let expResults = this.analytics.createNewReport("Auswertung des Experiments");
         let expResults_KPIs = this.analytics.createVisualisationWriter("ProcessedKPIs", "story", expResults);

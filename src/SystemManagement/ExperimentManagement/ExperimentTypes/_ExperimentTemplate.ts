@@ -102,7 +102,7 @@ export default abstract class ExperimentTemplate implements IExperiment
         {
             this.experimentator!.dbcon.setStatusExperiment(this.expid, GenericExperimentStatus.stoped);
         }
-        this.analytics.finishAnalytics();
+        this.analytics!.finishAnalytics();
         if (this.settings.parallelProcessing)
         {
             this.dbcon.saveDBtoHDD();
@@ -118,7 +118,7 @@ export default abstract class ExperimentTemplate implements IExperiment
      */
     getReport(repid: number)
     {
-        return this.analytics.getReport(repid);
+        return this.analytics!.getReport(repid);
     }
 
     /**
@@ -126,7 +126,7 @@ export default abstract class ExperimentTemplate implements IExperiment
      */
     getReports()
     {
-        return this.analytics.getReports();
+        return this.analytics!.getReports();
     }
 
     /**
@@ -136,7 +136,7 @@ export default abstract class ExperimentTemplate implements IExperiment
     {
         if (!this.interrupted)
         {
-            this.analytics.finishAnalytics();
+            this.analytics!.finishAnalytics();
             if (!this.settings.parallelProcessing)
             {
                 this.experimentator!.dbcon.setStatusExperiment(this.expid, GenericExperimentStatus.finished);
@@ -155,7 +155,7 @@ export default abstract class ExperimentTemplate implements IExperiment
     {
         if (!this.interrupted)
         {
-            this.analytics.finishAnalytics();
+            this.analytics!.finishAnalytics();
             if (!this.settings.parallelProcessing)
             {
                 this.experimentator!.dbcon.setStatusExperiment(this.expid, GenericExperimentStatus.error);

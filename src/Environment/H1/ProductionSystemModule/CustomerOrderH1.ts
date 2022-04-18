@@ -146,22 +146,24 @@ export default class CustomerOrderH1 implements ICustomerOrder
      * @param baseUnitsPerDay conversion rate to calulcate form sim units to days
      * @param config the environment config; used to get costs or penalties
      */
-    finalize(productionEnd:number, baseUnitsPerDay:number, config:EnvironmentConfiguration)
+    finalize(productionEnd: number, baseUnitsPerDay: number, config: EnvironmentConfiguration)
     {
         this.productionEnd = productionEnd;
-
-        let delayEarlinessCostRate: number = 0;
-        let numberOfPenaltyDays = Math.floor(Math.abs(this.productionEnd - this.dueDate) / baseUnitsPerDay);
-        if ((this.productionEnd - this.dueDate) > 0)
-        {
-            delayEarlinessCostRate = Math.min(numberOfPenaltyDays * config.delayPenaltyCost, config.maximumDelayPenalty) //Penalty for delay
-        } else
-        {
-            delayEarlinessCostRate = numberOfPenaltyDays * config.inventoryHoldingCost //Inventory holding costs
-        }
-
+        
         if (this.notOrderedByCustomer == false)
         {
+
+            let delayEarlinessCostRate: number = 0;
+            let numberOfPenaltyDays = Math.floor(Math.abs(this.productionEnd - this.dueDate) / baseUnitsPerDay);
+            if ((this.productionEnd - this.dueDate) > 0)
+            {
+                delayEarlinessCostRate = Math.min(numberOfPenaltyDays * config.delayPenaltyCost, config.maximumDelayPenalty) //Penalty for delay
+            } else
+            {
+                delayEarlinessCostRate = numberOfPenaltyDays * config.inventoryHoldingCost //Inventory holding costs
+            }
+
+
             let revenueByProducts: number = 0;
             this.products.forEach(product =>
             {

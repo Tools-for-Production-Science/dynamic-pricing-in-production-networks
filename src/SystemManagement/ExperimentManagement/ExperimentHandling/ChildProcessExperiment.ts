@@ -71,7 +71,7 @@ let exitHandler = () =>
 {
     if (exp != undefined)
         if (exp.settings.parallelProcessing && exp.settings.inMemoryCache)
-            exp.dbcon.saveDBtoHDD();
+            exp.dbcon!.saveDBtoHDD();
 
     if ((this as unknown as any).status)
         process.exit((this as unknown as any).status);

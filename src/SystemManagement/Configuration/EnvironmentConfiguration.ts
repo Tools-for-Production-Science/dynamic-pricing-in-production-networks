@@ -118,13 +118,13 @@ export class EnvironmentConfiguration
   /**@see EnvironmentConfiguration 
    * For multiple runs this array can control how many customers in a specific run shall be simulated
    * */
-  customerArray = [8]
+  customerArray = [8];
   /**{@link EnvironmentConfiguration#traffic} 
    * For multiple runs this array can control how much traffic in a specific run shall be simulated*/
-  trafficArray = [0.75]
+  trafficArray = [0.75];
 
   /**how long the settling phase should run; Neccessary for AI to start in a settled environment*/
-  lengthSettlingPhase = 150000
+  lengthSettlingPhase = 150000;
 }
 
 let e = new EnvironmentConfiguration()

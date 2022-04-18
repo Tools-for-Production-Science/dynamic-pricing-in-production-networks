@@ -10,13 +10,14 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE
 */
 
-import { Sim } from "simts";
+import { Random, Sim } from "simts";
 import ResourceV2 from "./ResourceV2";
 
 export class ResourceGroupV2
 {
     name: string = "";    
     sim: Sim;
+    rnd:Random;
     ressourceGroupInvestCost: number;
     Machines = new Array<ResourceV2>();
     MachineProductionRatePerPart = new Map<number, number>(); //Map<PartID,ProductionRate>
@@ -28,8 +29,9 @@ export class ResourceGroupV2
      * @param sim reference to the sim object
      * @param ressourceGroupInvestCost basic cost of an entity of this group
      */
-    constructor(name: string, sim: Sim, ressourceGroupInvestCost: number)
+    constructor(name: string, sim: Sim, ressourceGroupInvestCost: number, rnd:Random)
     {
+        this.rnd = rnd;
         this.name = name;
         this.sim = sim;
         this.ressourceGroupInvestCost = ressourceGroupInvestCost;

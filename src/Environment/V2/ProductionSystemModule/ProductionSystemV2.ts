@@ -335,7 +335,7 @@ export class ProductionSystemV2 extends SimEntity implements IEnvironmentCompone
      */
     private createGroupAndFirstMachine(sim, typeName, machineID, ressourceGroupInvestCost: number)
     {
-        let temp = new ResourceGroupV2(typeName, sim, ressourceGroupInvestCost);
+        let temp = new ResourceGroupV2(typeName, sim, ressourceGroupInvestCost, this.engine.randomSIM);
         temp.addMachine(machineID);
         return temp;
     }
@@ -561,22 +561,11 @@ export class ProductionSystemV2 extends SimEntity implements IEnvironmentCompone
         this.aggregateAllPossibleQueues(machinelist); //überührt string array in maschinenObjekte array und spoeichert in this.sort...
         let time = this.pc.estimateShortestCompletionTime(this.sort, this.engine.productionNetwork.curOrder as OrderV2);
 
-        if (time != 0)
-        {
-            //console.log("nicht null")
-        }
-
+ 
         let value = 0;
         if (time > 0)
         {
-            value = (time / (this.engine.sim.simTiming.getInBaseTime(30, "days")))
-            //value = (time / (this.engine.sim.simTiming.getInBaseTime(30, "days"))) / 2 + 0.5
-        }
-
-
-        if (value > 1)
-        {
-            //console.log('breakpoint')
+            value = (time / (this.engine.sim.simTiming.getInBaseTime(30, "days")))            
         }
 
         return value;

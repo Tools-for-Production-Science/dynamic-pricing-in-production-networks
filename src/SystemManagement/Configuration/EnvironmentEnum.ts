@@ -21,8 +21,10 @@ export enum Environment
     BenchmarkTest = "BenchmarkTest",
     //mpTest = "mpTest",
     BenchmarkMH = "BenchmarkMH",
-    
+
     //h1FS = "h1FS",
     BenchmarkH1MH = "BenchmarkH1MH",
     BenchmarkTestH1 = "BenchmarkTestH1",
+    BenchmarkH1Limit = "BenchmarkH1Limit",
+    ExperimentH1Bottleneck = "ExperimentH1Bottleneck"
 }

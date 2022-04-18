@@ -36,7 +36,6 @@ export class ParallelExperimentHandler
     setupPromise: Promise<boolean> = new Promise((res, rej) => { this.set = res });
     finish!: Function;
     set!: Function;
-    private pathToFile = './built/SystemManagement/ExperimentManagement/ExperimentTypes/';
 
     /**
      * This class handles parallel experiments by encapsulating a new thread an providing a standardized interfaces to the parallel thread.
@@ -77,7 +76,9 @@ export class ParallelExperimentHandler
                     break;
                 case "new":
                     this.dbcon.db.close();
-                    this.expid = this.experimentator.switchToNewExpInSameRun(this.expid, this.settings)
+                    this.expid = this.experimentator.switchToNewExpInSameRun(this.expid, this.settings);
+                    this.dbcon = new expDB(this.expid, this.settings.inMemoryCache);
+                    this.analytics = new AnalyticsReader(this.expid, this.dbcon);
                     this.fork?.send(['new', this.expid]);
                     break;
             }

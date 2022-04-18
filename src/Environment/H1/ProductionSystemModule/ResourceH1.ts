@@ -100,7 +100,9 @@ export default class ResourceH1
      */
     getProdTime(order: ProductionOrderH1): number
     {
-        let prodTime: number = (this.parent.ProductionTime.get(order.product.id))!
+        let baseTime = (this.parent.ProductionTime.get(order.product.id))!
+        let prodTime = this.parent.rnd.drawFromProb("triang", [0.95, 0.1, 0.5])*baseTime; //=>min=0.9, max=0.0+0.2, most probable value (c) = 0.9+0.2*0.5           
+        
         return prodTime;
     }
 }

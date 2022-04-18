@@ -27,7 +27,7 @@ const Paths = {
 
     H1: {
         products: './csv/H1/productsH1.csv',
-        skillmap: './csv/H1/skillmapH1.csv',
+        skillmap: './csv/H1/skillmapH1.txt',
         machines: './csv/H1/machinesH1.csv',
         demands: './csv/H1/demandsH1.csv',
         customers: './csv/H1/customersH1.csv',

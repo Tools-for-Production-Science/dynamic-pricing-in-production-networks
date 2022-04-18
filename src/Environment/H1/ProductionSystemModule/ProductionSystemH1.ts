@@ -29,6 +29,7 @@ import IEnvironmentComponent from "../../../GenericClasses/GenericSimulationClas
 import ProductionOrderH1 from "./ProductionOrderH1";
 import DemandH1 from "../ProductionNetworkModule/DemandH1";
 import TrafficH1 from "./Traffic";
+import IEngine from "../../../GenericClasses/GenericSimulationClasses/Interfaces/IEngine";
 
 
 export class ProductionSystemH1 extends SimEntity implements IProductionSystem, IEnvironmentComponent
@@ -42,7 +43,7 @@ export class ProductionSystemH1 extends SimEntity implements IProductionSystem, 
     sim: Sim;
 
     products: ProductH1[] = [];
-    engine: EngineH1;
+    engine: IEngine;
     config: EnvironmentConfiguration;
 
     MachineGroups = new Map<number, ResourceGroupH1>();
@@ -58,24 +59,32 @@ export class ProductionSystemH1 extends SimEntity implements IProductionSystem, 
     rep_prodOrders_JSON: DataStream
 
     counterDelayedCustomerOrders: number = 0;
+    counterDelayedCustomerOrdersPerClass: Map<any, [number, DataStream]> = new Map();
+    group_delayPerClass: number;
+
     rep_custOrders: DataStream
 
     rep_rewardProdSys: DataStream;
 
+    CapacityUsage_Data = new Map<number, [number]>();
+
     ordersInProduction = new Set<ProductionOrderH1>();
 
     traffics: TrafficH1[] = [];
+
+    //Special vars for postprocessing
+    earlinessSum = 0;
+    tardinessSum = 0;
     counterOutputProducts = 0;
     counterTrafficProducts = 0;
     overallRevenue = 0;
-
     revForH1Optimization = 0
 
     /**
      * The production system is a central component besides the production network. It represents a complete site. It handles all processes releveant to a site, like resources, production control, manufacturing etc.
      * @param engine the engine which created this production system entity
      */
-    constructor(engine: EngineH1)
+    constructor(engine: IEngine)
     {
         super();
         this.engine = engine;
@@ -89,13 +98,12 @@ export class ProductionSystemH1 extends SimEntity implements IProductionSystem, 
         let prodSysReport = engine.analytics.createNewReport("Reports ProductionSystem");
         this.rep_rewardProdSys = this.engine.analytics.createVisualisationWriter("Reward ProductionSystem", "line", prodSysReport);
         this.rep_custOrders = this.engine.analytics.createVisualisationWriter("Verspätete CustomerOrders", 'line', prodSysReport);
+
+        this.group_delayPerClass = this.engine.analytics.createNewReport("Verspätungen per Klasse");
     }
 
     resetMachineFlagsKPI() //empty function necessary for IProductionSystem
-    {
-
-    }
-
+    { }
 
     private startTraffics()
     {
@@ -139,11 +147,38 @@ export class ProductionSystemH1 extends SimEntity implements IProductionSystem, 
     writeKPIsToReport(order: ICustomerOrder)
     {
         (order as CustomerOrderH1).finalize(this.sim.time(), this.sim.simTiming.getInBaseTime(1, "days"), this.config);
-        if ((order.productionEnd > order.dueDate) && order.notOrderedByCustomer == false)
-        {
-            this.counterDelayedCustomerOrders += 1;
-        }
+
+        if (order.notOrderedByCustomer == false)
+            if ((order.productionEnd > order.dueDate))
+            {
+                this.counterDelayedCustomerOrders += 1;
+                this.tardinessSum += order.productionEnd - order.dueDate; //only for easy statistics
+                order.ProductionOrders.forEach(element =>
+                {
+                    let prodorder: ProductionOrderH1 = element as ProductionOrderH1;
+                    let del = this.counterDelayedCustomerOrdersPerClass.get(prodorder.product.prodTypeStr);
+                    if (del === undefined)
+                    {
+                        let writer = this.engine.analytics.createVisualisationWriter(prodorder.product.prodTypeStr, "line", this.group_delayPerClass);
+                        this.counterDelayedCustomerOrdersPerClass.set(prodorder.product.prodTypeStr, [1, writer]);
+                    }
+                    else
+                    {
+                        del[0] = del[0] + 1;
+                    }
+                })
+            }
+            else
+            {
+                this.earlinessSum += order.dueDate - order.productionEnd; //only for statistics
+            }
+
         this.rep_custOrders.write(this.engine.productionNetwork.counterRunDemandOrders, this.counterDelayedCustomerOrders);
+
+        this.counterDelayedCustomerOrdersPerClass.forEach((val, key, map) =>
+        {
+            val[1].write(this.engine.productionNetwork.counterRunDemandOrders, val[0]);
+        });
 
         this.overallRevenue += order.totalRevenue;
         this.counterOutputProducts += order.products.length;
@@ -173,8 +208,8 @@ export class ProductionSystemH1 extends SimEntity implements IProductionSystem, 
             let extraDueTime: number = this.pc.getMaxDurationForState(prodOrder, prodOrder.status, this.MachineGroups);
             prodOrder.dueDate += extraDueTime;
             prodOrder.customerOrder.dueDate += extraDueTime;
-
         }
+
         let machinelist = (prodOrder.product as ProductH1).getMachines(prodOrder.status, this.MachineGroups); // ruft hier jetzt die get Methode des Gewichts auf, damit das Gewicht bekannt ist.
         this.planOrder(prodOrder, machinelist!);
 
@@ -213,7 +248,6 @@ export class ProductionSystemH1 extends SimEntity implements IProductionSystem, 
      */
     private planOrder(order: ProductionOrderH1, machineList)
     {
-        let prodDur = this.pc.getMaxDurationForState(order, order.status, this.MachineGroups)  //order.duration; //Hier jetzt die maximale Dauer für den kommenden Schritt
         let chosenCapa: ResourceH1 | undefined;
         try
         {
@@ -300,6 +334,17 @@ export class ProductionSystemH1 extends SimEntity implements IProductionSystem, 
     */
     private enterfacility(que: ResourceH1)
     {
+        this.MachineGroups.forEach((value, key) =>
+        {
+            let usage = 0;
+            value.machines.map((val, index, ar) =>
+            {
+                usage += (val.queue.length + (val.inMachining == undefined ? 0 : 1));
+            })
+            this.CapacityUsage_Data.get(value.id)?.push(usage);
+        })
+
+
         let order = que.queue.shift();
 
         if (order != undefined)
@@ -347,12 +392,9 @@ export class ProductionSystemH1 extends SimEntity implements IProductionSystem, 
                 order.productionStartForActiveState = this.sim.time();
                 (this as unknown as ISimEntity).setTimer(que.parent.ProductionTime.get(order.product.id)!).done(() =>
                 {
-
                     order!.addStatus(que.machineID, this.sim.time());
-
                     if (que.inMachining == undefined)
                     {
-                        this.sim.simTime;
                         MsgLog.logError("Undefined Que", this, true)
                     }
 
@@ -387,9 +429,6 @@ export class ProductionSystemH1 extends SimEntity implements IProductionSystem, 
                     que.inMachining = undefined;
                     if (que.queue.length != 0)
                     {
-                        if (que.inMachining != undefined)
-                            console.log("test");
-
                         this.enterfacility(que);
                     }
                 });
@@ -418,11 +457,12 @@ export class ProductionSystemH1 extends SimEntity implements IProductionSystem, 
             this.MachineGroups.set(id, temp);
             MsgLog.log(MsgLog.types.debug, "Facility created: " + workplace, this, false, true);
         }
+        this.CapacityUsage_Data.set(id, [0]);
     }
 
     private createGroupAndFirstMachine(sim, id: number, workplace: string, minweight: number, maxweight: number, parallel: boolean, ProductionTime: Map<number, number>)
     {
-        let temp = new ResourceGroupH1(workplace, sim, minweight, maxweight, parallel, ProductionTime);
+        let temp = new ResourceGroupH1(workplace, sim, minweight, maxweight, parallel, ProductionTime, this.engine.randomSIM);
         temp.addMachine(id);
         return temp;
     }

@@ -37,7 +37,7 @@ import IProduct from "../../GenericClasses/GenericSimulationClasses/Interfaces/I
 export class EngineV2 implements IEngine
 {
 
-    sim = new Sim(); //Instanziert neue Simulation    
+    sim = new Sim(); 
 
     productionNetwork: ProductionNetwork;
     productionSystem: ProductionSystemV2;

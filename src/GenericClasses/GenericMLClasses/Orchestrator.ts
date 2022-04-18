@@ -92,7 +92,7 @@ export default class Orchestrator
             msglog.log(msglog.types.error, "Environment was not ready to be used before given to orchestrator", this, true);
 
         //initialize the agent
-        this.agentL = new Agent(configuration.mlconfigL, environment, analytics, random);
+        this.agentL = new Agent(configuration.mlconfigL, environment, analytics, random, this);
 
         //initialize environment 2 for the agent N
         let env2 = new Environment();
@@ -103,7 +103,7 @@ export default class Orchestrator
         }).bind(this));
         env2.setReady();
 
-        this.agentN = new Agent(configuration.mlconfigN, env2, analytics, random);
+        this.agentN = new Agent(configuration.mlconfigN, env2, analytics, random, this);
 
         //load critic model if specified
         this.loadModelWeightsString(configuration.agentmodel);
@@ -128,6 +128,9 @@ export default class Orchestrator
 
         this.agentL.clean();
         this.agentN.clean();
+        this.agentL = null!;
+        this.agentN = null!;
+        tf.disposeVariables();
         this.finished = true;
     }
 
@@ -162,13 +165,16 @@ export default class Orchestrator
                 this.currentPhase = this.phaseScenarioTrainingOnly();
                 break;
             case 5:
+                /**
+                 * Pretrained model, no changing
+                 */
                 this.currentPhase = Phase.l2;
                 return Phase.noT;
                 break;
             case 6:
             case 7:
                 /**
-                 * Training of l, then n with permanent switching
+                 * Pretrained model with permanent switching to update agent
                  */
                 this.currentPhase = this.phaseScenarioPermanentSwitching();
                 break;
@@ -277,6 +283,7 @@ export default class Orchestrator
         {
             this.lastState = this.agentL.environment.getStateTensor();
         }
+
         let nState: tf.Tensor;
         switch (this.currentPhase)
         {
@@ -312,6 +319,7 @@ export default class Orchestrator
 
         //scale the actions
         let returnValue: number[] = (this.scaleAction(min, max, this.lastAction));
+
         return returnValue;
     }
 
@@ -373,7 +381,9 @@ export default class Orchestrator
                     break;
                 case Phase.ln://Übergang: Sample muss noch zu l, nextstate schon zu n
                     this.agentL.addSample(this.lastState, this.lastAction, rew, this.agentL.environment.getStateTensor()); //sample noch zu l
-                    this.lastAction[1] = this.agentL.get_action(this.agentL.environment.getStateTensor())[0];
+                    temp = this.agentL.environment.getStateTensor();
+                    this.lastAction[1] = this.agentL.get_action(temp)[0];
+                    temp.dispose();
                     nextstate = this.agentN.environment.getStateTensor(); //Sstate für n vorbereiten
                     break;
                 case Phase.n:
@@ -432,8 +442,7 @@ export default class Orchestrator
                 await this.agentN.train_model(this.agentN.trainActor, 2);
                 this.replayCounter++;
                 this.agentN.trainActor = !this.agentN.trainActor;
-                this.
-                    sim.continueML();
+                this.sim.continueML();
                 break;
             default:
                 throw "not implemented phase in replay";
@@ -535,7 +544,7 @@ export default class Orchestrator
                         weightsTensor.push(tf.tensor(Object.values(weights[counter]) as any));
                         counter++;
                     }
-
+                    tf.dispose(a);
                     if (model.layers[i].getWeights().length == 2) //optional bias
                     {
                         a = model.layers[i].getWeights()[1].shape;//bias shape
@@ -545,6 +554,7 @@ export default class Orchestrator
                             counter++;
                         }
                     }
+                    tf.dispose(a);
                     model.layers[i].setWeights(weightsTensor);
                 }
             }

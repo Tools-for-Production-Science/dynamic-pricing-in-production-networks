@@ -84,13 +84,13 @@ export default class ExperimentV2Benchmark extends ExperimentTemplate implements
             }
         }
     }
-    async benchmarkingTest(useKI: boolean)
+    async benchmarkingTest(useAI: boolean)
     {
         this.analytics.deactivateDataStreamWriterCreation = true;
         this.analytics.writeLogsToDB = false;
         this.analytics.deactivateReportsCreation = true;
 
-        this.settings.envConfig.useAI = useKI;
+        this.settings.envConfig.useAI = useAI;
         let sim = new EngineV2(this.settings, this.analytics);
 
         this.analytics.deactivateDataStreamWriterCreation = false;

@@ -22,6 +22,8 @@ export class ExperimentSettings
     inMemoryCache = true; //speichere die Datenbank bis zum Ende des VErsuches auschließlich im Arbeitsspeicher
     seed = -1;
     seedArrayH1 = [121, 1304, 1835, 3561, 3596, 4421, 4955, 5397, 7071, 7578];
+    keyjump = 0;
+    keyend = Infinity;
     constructor()
     {
         this.name = "Default";

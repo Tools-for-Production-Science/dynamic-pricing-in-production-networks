@@ -42,7 +42,7 @@ export default class ProductH1 implements IProduct
      * @param price base price of the product without any negotiation
      * @param prodSys a reference to the production system
      */
-    constructor(prodType: string, pType: RouteSheet, mass: number, id: number, price: number, prodSys: ProductionSystemH1)
+    constructor(prodType: string, pType: RouteSheet, mass: number, id: number, price: number)
     {
 
         this.prodTypeStr = prodType;

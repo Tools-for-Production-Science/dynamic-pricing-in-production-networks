@@ -10,35 +10,72 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE
 */
 
+import { string } from "mathjs";
+
 
 /**
  * Simple object check.
  * @param item
  * @returns {boolean}
  */
- export function isObject(item) {
-    return (item && typeof item === 'object' && !Array.isArray(item));
-  }
-  
-  /**
-   * Deep merge two or more objects. Conserves field in target and adds or overwrites all other fields with values from sources
-   * @param target
-   * @param ...sources
-   */
-  export function mergeDeep(target, ...sources) {
-    if (!sources.length) return target;
-    const source = sources.shift();
-  
-    if (isObject(target) && isObject(source)) {
-      for (const key in source) {
-        if (isObject(source[key])) {
-          if (!target[key]) Object.assign(target, { [key]: {} });
-          mergeDeep(target[key], source[key]);
-        } else {
-          Object.assign(target, { [key]: source[key] });
+export function isObject(item)
+{
+  return (item && typeof item === 'object' && !Array.isArray(item));
+}
+
+/**
+ * Deep merge two or more objects. Conserves field in target and adds or overwrites all other fields with values from sources
+ * @param target
+ * @param ...sources
+ */
+let mem = new Array();
+export function mergeDeep(target, ...sources)
+{
+  if (!sources.length) return target;
+  const source = sources.shift();
+
+  if (isObject(target) && isObject(source))
+  {
+    for (const key in source)
+    {
+      mem.push(key);
+      if (isObject(source[key]))
+      {
+        if (!target[key]) 
+        {
+          console.log("Warning: adding new object field to settings: " + key);
+          Object.assign(target, { [key]: {} });
         }
+        mergeDeep(target[key], source[key]);
+      } else
+      {
+        if (target[key] === undefined) 
+        {
+          console.log("Warning: adding new value to settings: " + key);
+        }
+        Object.assign(target, { [key]: source[key] });
       }
     }
-  
-    return mergeDeep(target, ...sources);
+    checkUntouchedKeys(target);
   }
+
+  return mergeDeep(target, ...sources);
+}
+
+function checkUntouchedKeys(target)
+{
+  for (const key in target)
+  {
+    if (isObject(target[key]))
+    {
+      checkUntouchedKeys(target[key]);
+    }
+    else
+    {
+      if(!mem.includes(key))
+      {
+        console.log("In default settings was not changed: " + key);
+      }
+    }
+  }
+}

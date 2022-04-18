@@ -28,8 +28,7 @@ import IEngine from "./Interfaces/IEngine";
 import { Environment } from "../../SystemManagement/Configuration/EnvironmentEnum";
 
 
-export default class Customer
-{
+export default class Customer {
     private _id = -1;
     portfolio = new Array<IProduct>();
     totalUtility: number = 0;
@@ -69,8 +68,7 @@ export default class Customer
      * @param d_ third parameter of utility function (willingness to pay)
      * @param v fourth parameter of utility function (willingness to pay 2)
      */
-    constructor(engine: IEngine, envConfig: EnvironmentConfiguration, id, random: Random, a = 0.01, b = 10, d_ = 0.25, v = 0.75)
-    {
+    constructor(engine: IEngine, envConfig: EnvironmentConfiguration, id, random: Random, a = 0.01, b = 10, d_ = 0.25, v = 0.75) {
         this._id = id;
         this.a = a;
         this.b = b;
@@ -84,15 +82,14 @@ export default class Customer
         this.startD_ = d_;
         this.startV = v;
     }
-    
+
     /**
      * This function takes the previously drawn order, communiates with the ML Agent, then optimizes the delivery time to cost trade off 
      * based on an individual utility function and returns the order
      * @param order The temporary order object
      * @actionsKI actionsKI The choosen action 
      */
-    requestAndChoose(order: ICustomerOrder, actionsKI: any): ICustomerOrder | null
-    {
+    requestAndChoose(order: ICustomerOrder, actionsKI: any): ICustomerOrder | null {
         //Get pararmeters from KI
 
         //Default parameters
@@ -100,60 +97,50 @@ export default class Customer
         let l = 7.0;
         let n_ = 0.0
 
-        if (actionsKI[0] == undefined)
-        {
+        if (actionsKI[0] == undefined) {
             throw 'something went wrong, action was not retunred as array'
         }
 
-        if (actionsKI[2] != undefined)
-        {
+        if (actionsKI[2] != undefined) {
             k = actionsKI[0]
             l = actionsKI[1];
             n_ = actionsKI[2];
-        } else
-        {
+        } else {
             throw 'not three actions were choosen'
         }
 
 
         //set the negotiated due date for each order as the due date from the utility function (or static lead time) + the duration of the order. This avoids that due dates are negotiated that can never be met.
         let dueTime = -1;
-        if (this.envConfig.useAI)
-        {
+        if (this.envConfig.useAI) {
             dueTime = this.chooseByUtilityFunction(k, l, n_);
 
-        } else 
-        {
-            if (!this.envConfig.dynamicLeadTime)
-            {
+        } else {
+            if (!this.envConfig.dynamicLeadTime) {
                 //static Price, static Leadtime
                 dueTime = this.engine.sim.simTiming.getInBaseTime(this.envConfig.staticLeadTime, "days");
-            } else
-            {
+            } else {
                 //static Price, dynamic Leadtime (Optimum of customer) all orders will be accepted
                 dueTime = this.engine.sim.simTiming.getInBaseTime(this.b, "days") //  Kunde kann aus Lieferzeit-Preis Angebot auswählen und wählt sein Optimum 
             }
         }
-        
+
         order.dueTime = dueTime;
 
         this.curUtility = this.getUtility(k, l, n_, (dueTime) / this.engine.sim.simTiming.getInBaseTime(1, "days"));
 
         MsgLog.log(MsgLog.types.debug, 'utility is' + this.curUtility, this)
 
-        if (this.curUtility >= 0)
-        {
+        if (this.curUtility >= 0) {
             this.totalUtility += this.curUtility;
 
             //Calculate paid price for negotiated leadTime
             if (order.products[0].producttype != "Traffic") //Revenue kann nur geupdated werden, wenn es sich um ein ADN-Zylinder handelt, für alle anderen Materialien stehen keine Daten zur Verfügung
             {
-                if (this.envConfig.useAI)
-                {
+                if (this.envConfig.useAI) {
                     let dueTimeInDays = dueTime / this.engine.sim.simTiming.getInBaseTime(1, "days");
-                    order.relativePriceSurcharge = k * Math.exp(-dueTime + l) - k * (-dueTimeInDays + l) - k + n_;
-                } else
-                {
+                    order.relativePriceSurcharge = k * Math.exp(-dueTimeInDays + l) - k * (-dueTimeInDays + l) - k + n_;
+                } else {
                     order.relativePriceSurcharge = this.envConfig.staticPriceRelativeSurcharge;
                 }
             }
@@ -161,8 +148,7 @@ export default class Customer
             if (this.engine.productionNetwork.driftStarted)
                 this.benchmarkscenario(this.engine.config.envConfig.scenario);
             return order;
-        } else
-        {
+        } else {
             (order).notOrderedByCustomer = true;
             order.dueDate = -1
             MsgLog.log(MsgLog.types.debug, 'order is null', this)
@@ -181,8 +167,7 @@ export default class Customer
      * @param n from price function
      * @returns the negotiated due date
      */
-    chooseByUtilityFunction(k: number, l: number, n_: number): number
-    {
+    chooseByUtilityFunction(k: number, l: number, n_: number): number {
         //n will not be used as it is not part of the calculation
         //Mitternachtsformel
         //notwendige Bedingung df/dt = 0
@@ -211,27 +196,21 @@ export default class Customer
      * @param n_ from price function
      * @returns the utitliy at x
      */
-    getUtility(k, l, n_, x): number
-    {
-        if (this.envConfig.useAI)
-        {
+    getUtility(k, l, n_, x): number {
+        if (this.envConfig.useAI) {
             return -this.a * Math.exp(x - this.b) + this.a * (x - this.b) + this.a + this.d_ + this.v - k * Math.exp(-x + l) + k * (-x + l) + k - n_;
         }
-        else
-        {
+        else {
             return -this.a * Math.exp(x - this.b) + this.a * (x - this.b) + this.a + this.d_ + this.v - this.envConfig.staticPriceRelativeSurcharge;
         }
     }
 
-    public get id(): number
-    {
+    public get id(): number {
         return this._id
     }
 
-    private benchmarkscenario(scenario: number)
-    {
-        switch (scenario)
-        {
+    private benchmarkscenario(scenario: number) {
+        switch (scenario) {
             case 1: //Keine Drift der Kunden in irgendeine Richtung, Feste Kunden von Anfang an
             case 4:
             case 5:
@@ -239,32 +218,27 @@ export default class Customer
 
             case 2: //Drift zu kurzfristigen Kunden
             case 6:
-                if (this.b <= 3.0)
-                {
+                if (this.b <= 3.0) {
                     break;
                 }
 
                 //Each customer reduces its leadtime preference with bDriftReductionInDays
-                if (this.startB - this.envConfig.bDriftReductionInDays < this.b)
-                {
+                if (this.startB - this.envConfig.bDriftReductionInDays < this.b) {
                     this.b -= this.envConfig.bDriftReductionInDays / (this.envConfig.reductionBase / this.envConfig.customerAmount)
                 }
                 break;
 
             case 3: //Drift zu preissensitiven Kunden
             case 7:
-                if (this.d_ + this.v <= 0.8)
-                {
+                if (this.d_ + this.v <= 0.8) {
                     break;
                 }
 
 
-                if (this.startD_ - this.envConfig.dDriftReduction < this.d_)
-                {
+                if (this.startD_ - this.envConfig.dDriftReduction < this.d_) {
                     this.d_ -= this.envConfig.dDriftReduction / (this.envConfig.reductionBase / this.envConfig.customerAmount) //in Analogie zu oben, muss die Preissensitivität, 0.00001 pro Auftrag abnehmen
                 }
-                if (this.startV - this.envConfig.vDriftReduction < this.v)
-                {
+                if (this.startV - this.envConfig.vDriftReduction < this.v) {
                     this.v -= this.envConfig.vDriftReduction / (this.envConfig.reductionBase / this.envConfig.customerAmount) //in Analogie zu oben, muss die Preissensitivität, 0.00001 pro Auftrag abnehmen
                 }
 
