@@ -11,14 +11,11 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 */
 
 
-import { typeOf } from "mathjs";
-import EngineH1 from "../../../Environment/H1/EngineH1";
 import EngineH1Extension from "../../../Environment/H1/EngineH1Limit";
 import { Analytics } from "../../Analytics/Analytics";
 import Postprocessing from "../../Analytics/Postprocessing";
 import IExperiment from "../IExperiment";
 import ExperimentTemplate from "./_ExperimentTemplate";
-var heapdump = require('heapdump');
 
 /**
  * This is an experiment to find out general interrelationships depending on variable customer demand, machines and market movements.
