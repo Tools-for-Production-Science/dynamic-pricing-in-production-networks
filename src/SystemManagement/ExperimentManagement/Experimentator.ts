@@ -114,8 +114,8 @@ export class Experimentator
             let exp = this.queue[0];
             if (exp)
             {
-                if (this.productionMode)
-                    exp.engine!.orchestrator!.enableProdMode();
+                // if (this.productionMode)
+                //     exp.engine!.orchestrator!.enableProdMode();
                     
                 exp.run().then(() =>
                 {
