@@ -26,6 +26,7 @@ export default class ProductionControlH1
      * @param MachineGroups 
      * @returns 
      */
+
     planOrder(sort: ResourceH1[], order: ProductionOrderH1, MachineGroups: Map<number, ResourceGroupH1>): ResourceH1 
     {
         let chosenCapa: ResourceH1 | null = null;
@@ -36,7 +37,6 @@ export default class ProductionControlH1
         //3. (außer bei 2.3) Prüfe, ob Folgeausträge noch rechtzeitig fertig werden. Wenn nicht gehe zu 2.2
 
         //Sort queue by capacity
-
 
         sort.sort((MachineA, MachineB) => MachineA.getTotalDurationInQueue() - MachineB.getTotalDurationInQueue())
 
