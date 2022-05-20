@@ -62,7 +62,7 @@ export class expDB
     {
         if (this.inMemory)
         {
-            const buffer = this.db.serialize();
+            const buffer = (this.db as any).serialize();
             fs.writeFileSync("" + this.subDir + "/" + this.expid + ".db", buffer);
         }
     }
